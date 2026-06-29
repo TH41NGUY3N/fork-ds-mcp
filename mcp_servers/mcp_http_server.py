@@ -78,6 +78,57 @@ def execute_python_code(
         
     except Exception as e:
         return f"Error: {str(e)}"
+    
+
+# Add this tool to your mcp_http_server.py
+@mcp.tool()
+def fetch_smart_meter_data(customer_id: str, month: str) -> str:
+    """
+    Fetches the daily electricity consumption (in kWh) for a specific customer.
+    Use this to help customers understand their energy bill.
+    """
+    # In a real Enercity system, this would query an SQL database or SAP system.
+    # For your portfolio, we use mock data.
+    mock_database = {
+        "CUST-8472": {
+            "January": {"total_kwh": 450, "peak_usage_appliance": "Heat Pump", "peak_time": "18:00 - 21:00"},
+            "February": {"total_kwh": 380, "peak_usage_appliance": "Electric Vehicle Charger", "peak_time": "23:00 - 05:00"}
+        }
+    }
+    
+    data = mock_database.get(customer_id, {}).get(month)
+    if not data:
+        return f"Error: No smart meter data found for customer {customer_id} in {month}."
+    
+    return (
+        f"Data for {customer_id} in {month}:\n"
+        f"- Total Consumption: {data['total_kwh']} kWh\n"
+        f"- Main Driver: {data['peak_usage_appliance']}\n"
+        f"- Peak Hours: {data['peak_time']}"
+    )
+
+# Add this tool to your mcp_http_server.py
+@mcp.tool()
+def predict_solar_yield(city: str, panel_capacity_kwp: float) -> str:
+    """
+    Calculates the expected solar energy generation (in kWh) for the next day.
+    Requires the city name and the size of the customer's solar installation in kWp.
+    """
+    # Mocking a weather API call (e.g., OpenWeatherMap)
+    weather_conditions = {
+        "Hannover": {"sun_hours": 3.5, "condition": "Cloudy"},
+        "Munich": {"sun_hours": 8.0, "condition": "Sunny"}
+    }
+    
+    forecast = weather_conditions.get(city, {"sun_hours": 5.0, "condition": "Partly Cloudy"})
+    
+    # Simple physics estimation: Capacity * Sun Hours * 0.75 (Efficiency Loss)
+    estimated_kwh = panel_capacity_kwp * forecast["sun_hours"] * 0.75
+    
+    return (
+        f"Tomorrow's forecast for {city}: {forecast['condition']} ({forecast['sun_hours']} sun hours).\n"
+        f"A {panel_capacity_kwp} kWp system is expected to generate approximately {estimated_kwh:.2f} kWh tomorrow."
+    )
 
 
 if __name__ == "__main__":
